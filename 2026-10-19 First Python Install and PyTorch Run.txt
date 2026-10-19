@@ -1,0 +1,182 @@
+NVIDIA RTX 5090 + PyTorch on Ubuntu
+
+File: RTX5090_PyTorch_Setup.md
+
+Select and copy the Markdown source below into a plain-text editor, then save it with the .md extension.
+
+# NVIDIA RTX 5090 + PyTorch on Ubuntu
+
+## 1. System Information
+
+- OS: Ubuntu (version not recorded)
+- Hostname: CHHS-F10412
+- Python: 3.14
+- Virtual environment: ~/torch-test
+- PyTorch: 2.14.1+cu130
+- CUDA build: 13.0
+- GPU: NVIDIA GeForce RTX 5090
+- NVIDIA driver: 595.91.07
+- Linux kernel: 7.0.0-39-generic
+- Secure Boot: Enabled
+
+## 2. Installation
+
+Created a Python virtual environment:
+
+    python3 -m venv ~/torch-test
+    source ~/torch-test/bin/activate
+
+Installed PyTorch:
+
+    python -m pip install torch --index-url https://download.pytorch.org/whl/cu130
+
+Installed NumPy:
+
+    python -m pip install numpy
+
+NumPy installed successfully, version 2.5.4.
+
+## 3. GPU Test
+
+PyTorch test output:
+
+    PyTorch: 2.14.1+cu130
+    PyTorch CUDA build: 13.0
+    CUDA available: False
+    PyTorch cannot access the GPU yet.
+
+Result: PyTorch is installed, but GPU computation is not working.
+
+## 4. Hardware Detection
+
+Command:
+
+    lspci -nnk | grep -A 4 -i nvidia
+
+Result:
+
+    NVIDIA Corporation GB202 [GeForce RTX 5090] [10de:2b85]
+    Kernel driver in use: nvidia
+
+Ubuntu detects the physical GPU.
+
+NVIDIA device files exist:
+
+- /dev/nvidia0
+- /dev/nvidiactl
+- /dev/nvidia-uvm
+- /dev/nvidia-uvm-tools
+
+Loaded NVIDIA kernel modules:
+
+- nvidia
+- nvidia_uvm
+- nvidia_drm
+- nvidia_modeset
+
+## 5. Secure Boot and Kernel
+
+Secure Boot status:
+
+    SecureBoot enabled
+
+Kernel version:
+
+    7.0.0-39-generic
+
+No Secure Boot settings have been changed.
+
+## 6. NVIDIA Driver Errors
+
+Kernel logs were inspected using:
+
+    sudo journalctl -k -b --no-pager | grep -Ei 'nvidia|nouveau|secure boot|verification|key was rejected' | tail -40
+
+### Error A: Open Kernel Modules Required
+
+    NVRM: installed in this system requires use of the NVIDIA open kernel modules.
+
+The driver reports that the RTX 5090 requires NVIDIA's open kernel modules.
+
+This is the primary identified driver issue.
+
+### Error B: Firmware Loading Failure
+
+    Direct firmware load for nvidia/595.91.07/gsp_ga10x.bin failed with error -2
+
+The requested firmware could not be loaded. Whether the file is missing has not been verified.
+
+### Error C: DRM Initialization Failure
+
+    [nvidia-drm] Failed to allocate NvKmsKapiDevice
+
+This is consistent with the GPU initialization failure.
+
+Snap-related AppArmor events appeared in the logs, but they have not been established as the cause.
+
+## 7. Current Status
+
+- Python: Installed
+- PyTorch: Installed
+- NumPy: Installed
+- RTX 5090 hardware detection: Working
+- NVIDIA kernel modules: Loaded
+- NVIDIA driver initialization: Failing
+- Firmware loading: Error reported
+- PyTorch CUDA access: Not working
+- GPU calculation: Not completed
+
+## 8. Changes Made
+
+- Installed PyTorch with CUDA 13.0 support.
+- Installed NumPy in the Python virtual environment.
+- Ran hardware and driver diagnostic commands.
+
+No NVIDIA drivers were removed or reinstalled.
+
+No Secure Boot, TPM, BIOS, kernel, or Snap settings were changed.
+
+## 9. Suggested Next Steps
+
+Inspect installed NVIDIA packages:
+
+    apt list --installed 2>/dev/null | grep -E 'nvidia|linux-modules-nvidia'
+
+Inspect NVIDIA-related Snap packages:
+
+    snap list | grep -E 'nvidia|pc-kernel'
+
+Inspect the NVIDIA module:
+
+    modinfo -F license nvidia
+
+Check for the expected firmware file:
+
+    find /lib/firmware /usr/lib/firmware -path '*/nvidia/595.91.07/gsp_ga10x.bin' 2>/dev/null
+
+These commands have not been executed.
+
+After correcting the driver installation, verify:
+
+    nvidia-smi
+
+Then test PyTorch:
+
+    source ~/torch-test/bin/activate
+
+    python -c "import torch; print('CUDA available:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'Unavailable')"
+
+Expected result:
+
+    CUDA available: True
+    GPU: NVIDIA GeForce RTX 5090
+
+## 10. Conclusion
+
+Python and PyTorch are installed, and Ubuntu detects the RTX 5090.
+
+PyTorch cannot currently access the GPU.
+
+The primary identified issue is the NVIDIA driver's requirement for open kernel modules. A firmware loading error is also present.
+
+The next step is to investigate the NVIDIA driver installation without unnecessarily changing Secure Boot, TPM, kernel, or Snap settings.
